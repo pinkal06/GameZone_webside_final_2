@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GameZone</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link href="style.css" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark gaming-navbar">
+
+<div class="container">
+
+<a class="navbar-brand logo" href="#">
+🎮 GameZone
+</a>
+
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+<span class="navbar-toggler-icon"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="menu">
+
+<ul class="navbar-nav ms-auto text-center">
+
+<li class="nav-item">
+<a class="nav-link active" href="index.html">Home</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="Games.html">Games</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="Top_Players.html">Top Players</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="login.html">Login</a>
+</li>
+
+<li class="nav-item ms-3">
+<button class="btn btn-danger login-btn" data-bs-toggle="modal" data-bs-target="#loginModal">
+Login
+</button>
+</li>
+
+</ul>
+
+</div>
+</div>
+</nav>
+
+<script src="main.js"></script>
+
+
+
+
+<section>
+    <div class="game-bg">
+
+<div class="login-box">
+
+<h2>🎮 Gamer Login</h2>
+
+<form id="loginForm">
+
+<div class="input-box">
+<label for="username">Username</label>
+<input type="text" id="username">
+</div>
+
+<div class="input-box">
+
+
+<label for="password">Password</label>
+<input type="password" id="password" required>
+</div>
+
+<button type="submit" class="login-btn">
+Play Now
+</button>
+
+<p class="register">
+New Gamer ? <a href="#">Create Account</a>
+</p>
+
+</form>
+
+</div>
+
+</div>
+</section>
+<footer class="game-footer">
+
+<div class="container">
+
+<div class="row">
+
+<!-- Logo -->
+<div class="col-md-4 footer-box">
+<h3 class="logo">🎮 GameZone</h3>
+<p>Play the best online games with amazing graphics and fun gameplay.</p>
+</div>
+
+<!-- Links -->
+<div class="col-md-4 footer-box">
+<h4>Quick Links</h4>
+<ul>
+<li><a href="index.html">Home</a></li>
+<li><a href="Games.html">Games</a></li>
+<li><a href="Top_Players.html">Top Players</a></li>
+<li><a href="login.html">Contact</a></li>
+</ul>
+</div>
+
+<!-- Social -->
+<div class="col-md-4 footer-box">
+<h4>Follow Us</h4>
+
+<div class="social-icons">
+<a href="#">🌐</a>
+<a href="#">📘</a>
+<a href="#">📸</a>
+<a href="#">🐦</a>
+</div>
+
+</div>
+
+</div>
+
+<hr>
+
+<p class="copyright">
+© 2026 GameZone | All Rights Reserved
+</p>
+
+</div>
+
+<button id="topBtn">⬆</button>
+
+</footer>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Start Analytics & Cookie Banner -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LHM5TG8KX4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+    gtag('config', 'G-LHM5TG8KX4');
+  </script>
+  <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/9f1143cf6014b60f1049daa4/script.js">
+  </script>
+  <!-- Finish Analytics & Cookie Banner -->
+  <!-- Start confetti link -->
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/confetti@3.0.3/tsparticles.confetti.bundle.min.js"></script>
+  <!-- Stop confetti link -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Racing Icons</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/all.css">
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/sharp-solid.css">
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/sharp-regular.css">
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/sharp-light.css">
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/duotone-light.css">
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/duotone.css" />
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/duotone-regular.css" />
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/brands.css" />
+  <style>
+    :root {
+      --track-color: #121212;
+      --border-color: rgba(255, 255, 255, 0.2);
+      --finish-color: #1f1f1f;
+      --cell-size: 3.2rem;
+    }
+
+    body {
+      font-family: Helvetica, sans-serif;
+      max-width: 100%;
+      margin: 0;
+      padding: 20px;
+      background-color: #e4ebe3;
+      opacity: 1;
+      background-image: linear-gradient(#d2d9dd 0.8px, transparent 0.8px), linear-gradient(to right, #d2d9dd 0.8px, #e4ebe3 0.8px);
+      background-size: 16px 16px;
+      overflow-x: hidden;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 5000;
+    }
+
+    .track {
+      display: flex;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+      overflow: hidden;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .track:nth-child(1) {
+      background: #fd5901;
+    }
+
+    .track:nth-child(2) {
+      background: #f78104;
+    }
+
+    .track:nth-child(3) {
+      background: #faab36;
+    }
+
+    .track:nth-child(4) {
+      background: #249ea0;
+    }
+
+    .track:nth-child(5) {
+      background: #008083;
+    }
+
+    .track:nth-child(6) {
+      background: #005f60;
+    }
+
+    .cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px dashed rgba(255, 255, 255, 0.3);
+      position: relative;
+      transition: background 0.3s ease;
+    }
+
+    .cell:last-child {
+      border-right: none;
+      background-color: #aba8c2;
+      opacity: 0.7;
+      background-image: repeating-linear-gradient(45deg, #d2d4d5 25%, transparent 25%, transparent 75%, #d2d4d5 75%, #d2d4d5), repeating-linear-gradient(45deg, #d2d4d5 25%, #aba8c2 25%, #aba8c2 75%, #d2d4d5 75%, #d2d4d5);
+      background-position: 0 0, 11px 11px;
+      background-size: 21px 21px;
+    }
+
+    .icon {
+      font-size: 2rem;
+      transition: transform 0.3s ease;
+    }
+
+    .icon:hover {
+      transform: rotate(360deg);
+    }
+
+    .dice {
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #dice {
+      font-size: 3.5rem;
+      width: 110px;
+      height: 110px;
+      background: #e4ebe3;
+      border-radius: 25%;
+      border: 3px solid #d2d9dd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #dice.rotate {
+      transform: scaleY(0);
+    }
+
+    /* Dynamic dice backgrounds for each animal */
+    #dice.trex-bg {
+      background: #fd5901;
+    }
+
+    #dice.whale-bg {
+      background: #f78104;
+    }
+
+    #dice.elephant-bg {
+      background: #faab36;
+    }
+
+    #dice.turtle-bg {
+      background: #249ea0;
+    }
+
+    #dice.octopus-bg {
+      background: #008083;
+    }
+
+    #dice.dragon-bg {
+      background: #005f60;
+    }
+
+    .celebration {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 15, 25, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .celebration .winner-icon {
+      font-size: 6rem;
+      margin-bottom: 2rem;
+      animation: bounce 1s infinite;
+    }
+
+    button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #00f0ff, #00c9a7);
+      color: #111;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+      transition: transform 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      :root {
+        --cell-size: 2.5rem;
+      }
+
+      .icon {
+        font-size: 1.5rem;
+      }
+
+      #dice {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        --cell-size: 2.2rem;
+      }
+
+      .icon {
+        font-size: 1.2rem;
+      }
+
+      #dice {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+      }
+    }
+    .back-btn{
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background:#00c9d6;
+transform:scale(1.1);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+
+.back-btn:hover{
+    transform: scale(1.1);
+}
+  </style>
+</head>
+
+<body>
+  <div class="game-container">
+    <div id="tracks"></div>
+
+    <div class="controls">
+      <div class="dice" id="dice"><i class="fa-duotone fa-solid fa-sneaker-running" style="--fa-primary-color: #368c5b; --fa-secondary-color: #368c5b;"></i></div>
+      <button class="back-btn" onclick="goBack()">⬅ Back</button>
+    </div>
+  </div>
+<script>
+function goBack() {
+  window.history.back();
+}
+</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Game configuration
+      const config = {
+        tracks: 6,
+        cells: 11,
+        icons: [{
+            icon: 'fa-solid fa-t-rex',
+            color: '#fff',
+            bgClass: 'trex-bg'
+          },
+          {
+            icon: 'fa-solid fa-whale',
+            color: '#fff',
+            bgClass: 'whale-bg'
+          },
+          {
+            icon: 'fa-solid fa-elephant',
+            color: '#fff',
+            bgClass: 'elephant-bg'
+          },
+          {
+            icon: 'fa-solid fa-turtle',
+            color: '#fff',
+            bgClass: 'turtle-bg'
+          },
+          {
+            icon: 'fa-solid fa-octopus',
+            color: '#fff',
+            bgClass: 'octopus-bg'
+          },
+          {
+            icon: 'fa-solid fa-dragon',
+            color: '#fff',
+            bgClass: 'dragon-bg'
+          }
+        ]
+      };
+      // Game state
+      const gameState = {
+        positions: Array(config.tracks).fill(0),
+        gameOver: false,
+        winner: null
+      };
+      // Create tracks
+      const tracksContainer = document.getElementById('tracks');
+      for (let i = 0; i < config.tracks; i++) {
+        const track = document.createElement('div');
+        track.className = 'track';
+        for (let j = 0; j < config.cells; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          if (j === 0) {
+            const icon = document.createElement('i');
+            icon.className = `icon fas ${config.icons[i].icon}`;
+            icon.style.color = config.icons[i].color;
+            icon.id = `icon-${i}`;
+            cell.appendChild(icon);
+          }
+          track.appendChild(cell);
+        }
+        tracksContainer.appendChild(track);
+      }
+      // Dice
+      const diceElement = document.getElementById('dice');
+      diceElement.addEventListener('click', function() {
+        if (gameState.gameOver) return;
+        // Animate dice rotation
+        diceElement.classList.add('rotate');
+        setTimeout(() => {
+          diceElement.classList.remove('rotate');
+          // Roll dice
+          const roll = Math.floor(Math.random() * 6);
+          // Show rolled animal on dice and change background
+          diceElement.innerHTML = '';
+          const diceIcon = document.createElement('i');
+          diceIcon.className = `dice-icon fas ${config.icons[roll].icon}`;
+          diceIcon.style.color = config.icons[roll].color;
+          diceElement.appendChild(diceIcon);
+          // Remove all background classes and add the new one
+          diceElement.className = 'dice';
+          diceElement.classList.add(config.icons[roll].bgClass);
+          // Move that animal
+          moveIcon(roll);
+          // Check winner
+          checkWinner();
+        }, 500);
+      });
+
+      function moveIcon(iconIndex) {
+        gameState.positions[iconIndex] += 1;
+        if (gameState.positions[iconIndex] >= config.cells) {
+          gameState.positions[iconIndex] = config.cells - 1;
+        }
+        const icon = document.getElementById(`icon-${iconIndex}`);
+        const targetCell = document.querySelectorAll('.track')[iconIndex].children[gameState.positions[iconIndex]];
+        if (icon && targetCell) {
+          targetCell.appendChild(icon);
+        }
+      }
+
+      function checkWinner() {
+        for (let i = 0; i < config.tracks; i++) {
+          if (gameState.positions[i] >= config.cells - 1) {
+            gameState.gameOver = true;
+            gameState.winner = i;
+            showCelebration(i);
+            return;
+          }
+        }
+      }
+
+      function showCelebration(winnerIndex) {
+        const celebration = document.createElement('div');
+        celebration.className = 'celebration';
+        const winnerIcon = document.createElement('i');
+        winnerIcon.className = `winner-icon fas ${config.icons[winnerIndex].icon}`;
+        winnerIcon.style.color = config.icons[winnerIndex].color;
+        const winnerTitle = document.createElement('h2');
+        winnerTitle.innerHTML = `<i class="fa-duotone fa-regular fa-web-awesome fa-xl" style="--fa-primary-color: #FFD43B; --fa-secondary-color: #FFD43B;"></i>`;
+        const restartButton = document.createElement('button');
+        restartButton.innerHTML = '<i class="fa-solid fa-repeat"></i>';
+        restartButton.addEventListener('click', resetGame);
+        celebration.appendChild(winnerTitle);
+        celebration.appendChild(winnerIcon);
+        celebration.appendChild(restartButton);
+        document.body.appendChild(celebration);
+        launchConfetti();
+      }
+
+      function resetGame() {
+        gameState.positions = Array(config.tracks).fill(0);
+        gameState.gameOver = false;
+        gameState.winner = null;
+        diceElement.innerHTML = '<i class="fa-duotone fa-solid fa-sneaker-running" style="--fa-primary-color: #368c5b; --fa-secondary-color: #368c5b;"></i>';
+        diceElement.className = 'dice'; // Reset to default styling
+        const celebration = document.querySelector('.celebration');
+        if (celebration) celebration.remove();
+        for (let i = 0; i < config.tracks; i++) {
+          const icon = document.getElementById(`icon-${i}`);
+          const firstCell = document.querySelectorAll('.track')[i].children[0];
+          if (icon && firstCell) firstCell.appendChild(icon);
+        }
+      }
+      // Simple confetti burst
+      function launchConfetti() {
+        const count = 200,
+          defaults = {
+            origin: {
+              y: 0.7
+            },
+          };
+
+        function fire(particleRatio, opts) {
+          confetti(
+            Object.assign({}, defaults, opts, {
+              particleCount: Math.floor(count * particleRatio),
+            })
+          );
+        }
+        fire(0.25, {
+          spread: 26,
+          startVelocity: 55,
+        });
+        fire(0.2, {
+          spread: 60,
+        });
+        fire(0.35, {
+          spread: 100,
+          decay: 0.91,
+          scalar: 0.8,
+        });
+        fire(0.1, {
+          spread: 120,
+          startVelocity: 25,
+          decay: 0.92,
+          scalar: 1.2,
+        });
+        fire(0.1, {
+          spread: 120,
+          startVelocity: 45,
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

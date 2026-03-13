@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Moirai+One&display=swap');
+
+:root {
+    --border-radius: 10px;
+    --tile-size: 100px;
+    --gap: 10px;
+}
+
+body {
+    font-family: monospace;
+    margin: 0;
+    height: 100dvh;
+    width: 100dvw;
+    background: linear-gradient(to bottom, rgb(0, 62, 128), rgb(23, 0, 128));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+p {
+    color: #adfeff;
+    text-align: center;
+    max-width: 70%;
+    margin-bottom: 3em;
+}
+
+button {
+    -webkit-appearance: none;
+    box-shadow: none;
+    border: 0;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+h1 {
+    margin-bottom: 0;
+    font-family: "Moirai One";
+    font-size: 5em;
+    background: linear-gradient(to right, #00DBDE, #FC00FF);
+    color: transparent;
+    background-clip: text;
+}
+
+.game {
+    position: relative;
+}
+
+.board {
+    display: grid;
+    gap: var(--gap);
+    padding: var(--gap);
+    grid-template-columns: repeat(3, var(--tile-size));
+    background: #0a0038;
+    border-radius: var(--border-radius);
+}
+
+.tile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--tile-size);
+    height: var(--tile-size);
+    border-radius: var(--border-radius);
+    background: rgb(19, 2, 105);
+    transition: all .4s ease;
+}
+
+
+.tile>div {
+    position: absolute;
+    z-index: 10;
+    font-size: 30px;
+    font-weight: bold;
+    color: white;
+}
+
+.tile:hover {
+    background: rgb(15, 0, 82);
+}
+
+.tile.wonx {
+    transition: background 1s ease;
+    transition-delay: .4s;
+    background: #adfeff;
+}
+
+.tile.wono {
+    transition: background 1s ease;
+    transition-delay: .4s;
+    background: #feb5ff;
+}
+
+.tile.next {
+    opacity: .4;
+}
+
+.tile::after,
+.tile::before {
+    transition: all .4s ease;
+    content: "";
+    position: absolute;
+}
+
+.tile.x::after,
+.tile.x::before {
+    box-shadow: 0px 0px 20px 4px #0efcff80;
+    width: 20px;
+    height: 60px;
+    background: #00DBDE;
+    border-radius: calc(var(--border-radius)/2);
+}
+
+.tile.x::after {
+    rotate: -45deg;
+}
+
+.tile.x::before {
+    rotate: 45deg;
+}
+
+.tile.o::before {
+    width: 25px;
+    height: 25px;
+    border: 15px solid #FC00FF;
+    box-shadow: 0px 0px 20px 4px #FC00FF80;
+    border-radius: 100px;
+}
+
+
+.linethrough {
+    --width: 0px;
+    width: 0px;
+    height: 4px;
+    border-radius: 10px;
+    background: white;
+    position: absolute;
+    animation: strikethrough 1s ease forwards;
+    transform-origin: left center;
+}
+
+.linethrough#h1 {
+    left: 20px;
+    top: calc(50px + var(--gap));
+}
+
+.linethrough#h2 {
+    left: 20px;
+    top: calc(150px + var(--gap) * 2);
+}
+
+.linethrough#h3 {
+    left: 20px;
+    top: calc(250px + var(--gap) * 3);
+}
+
+.linethrough#v1 {
+    rotate: 90deg;
+    top: 20px;
+    left: calc(50px + var(--gap));
+}
+
+.linethrough#v2 {
+    rotate: 90deg;
+    top: 20px;
+    left: calc(150px + var(--gap) * 2);
+}
+
+.linethrough#v3 {
+    rotate: 90deg;
+    top: 20px;
+    left: calc(250px + var(--gap) * 3);
+}
+
+.linethrough#diagonal1 {
+    rotate: 45deg;
+    top: 20px;
+    left: 20px;
+    --width: 125px;
+}
+
+.linethrough#diagonal2 {
+    rotate: 135deg;
+    top: 20px;
+    left: calc(100% - 20px);
+    --width: 125px;
+}
+
+.result {
+    z-index: 10;
+    position: fixed;
+    inset: 0;
+    width: 100dvw;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 100px;
+    transition: all 1s ease;
+}
+
+.result h2 {
+    margin: 0;
+    font-family: "Moirai One";
+    background: linear-gradient(to right, #00DBDE, #FC00FF);
+    color: transparent;
+    background-clip: text;
+}
+
+.result button {
+    z-index: 10;
+    height: 50px;
+    width: 100px;
+    background: linear-gradient(to right, #00DBDE, #FC00FF);
+    border-radius: var(--border-radius);
+}
+
+@keyframes strikethrough {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: calc(var(--tile-size) * 3 + var(--gap) * 4 - 50px + var(--width));
+    }
+}
+
+@media screen and (max-width: 640px) {
+
+    .game {
+        margin-top: auto;
+        margin-bottom: 40px;
+    }
+    h1 {
+        font-size: 3em;
+    }
+
+    .result h2 {
+        font-size: .75em;
+        margin-bottom: 40px;
+    }
+
+    .result button {
+        width: 80%;
+    }
+}
+    </style>
+</head>
+<body>
+    
+    <h1>Tic-Tac-Toe</h1>
+    <p>You have only 3 tiles to play. Be smart and use them correctly to trick your opponent.</p>
+    <div class="game">
+        <div class="board">
+            <button class="tile wonx x" id="0" onclick="chooseTile()"></button>
+            <button class="tile wono o" id="1" onclick="chooseTile()"></button>
+            <button class="tile wonx x" id="2" onclick="chooseTile()"></button>
+            <button class="tile" id="3" onclick="chooseTile()"></button>
+            <button class="tile" id="4" onclick="chooseTile()"></button>
+            <button class="tile" id="5" onclick="chooseTile()"></button>
+            <button class="tile" id="6" onclick="chooseTile()"></button>
+            <button class="tile" id="7" onclick="chooseTile()"></button>
+            <button class="tile" id="8" onclick="chooseTile()"></button>
+        </div>
+    </div>
+    <div class="result">
+        <h2></h2>
+        <button onclick="initBoard()">Play Again</button>
+    </div>
+    <script>
+        const players = Object.freeze({
+    CROSS: "x",
+    CIRCLE: "o"
+})
+const TABLE = [[null, null, null], [null, null, null], [null, null, null]]
+
+const winningMatches = {
+    v1: [[0, 0], [1, 0], [2, 0]],
+    v2: [[0, 1], [1, 1], [2, 1]],
+    v3: [[0, 2], [1, 2], [2, 2]],
+    h1: [[0, 0], [0, 1], [0, 2]],
+    h2: [[1, 0], [1, 1], [1, 2]],
+    h3: [[2, 0], [2, 1], [2, 2]],
+    diagonal1: [[0, 0], [1, 1], [2, 2]],
+    diagonal2: [[2, 0], [1, 1], [0, 2]]
+}
+
+let playedX = [];
+let playedO = [];
+
+const tiles = document.querySelectorAll(".tile");
+const game = document.querySelector(".game");
+let turn;
+let table;
+const result = document.querySelector(".result");
+
+const initBoard = () => {
+    turn = players.CROSS;
+    table = JSON.parse(JSON.stringify(TABLE));
+    result.style.display = "none";
+    tiles.forEach(tile => tile.className = "tile");
+    const line = document.querySelector(".linethrough");
+    game.style.pointerEvents = "all";
+    line && game.removeChild(line);
+    playedX = [];
+    playedO = [];
+};
+
+const checkBoard = (turn, i, j) => {
+    const keys = Object.keys(winningMatches);
+
+    for (let key of keys) {
+        const match = winningMatches[key];
+        if (!match.find(e => JSON.stringify(e) == JSON.stringify([i, j]))) continue;
+
+        if (
+            turn === table[match[0][0]][match[0][1]] &&
+            turn === table[match[1][0]][match[1][1]] &&
+            turn === table[match[2][0]][match[2][1]]
+        ) return key;
+    }
+
+
+    for (let k = 0; k < 3; k++) {
+        if (table[k].includes(null)) return null;
+    }
+    return "draw";
+};
+
+const winGame = (combination) => {
+    const line = document.createElement("div");
+    line.className = "linethrough";
+    line.id = combination;
+
+    game.appendChild(line);
+    game.style.pointerEvents = "none";
+    result.querySelector("h2").innerHTML = "Winner!";
+    setTimeout(() => {
+        result.style.display = "flex";
+    }, 3000);
+
+    const highlight = winningMatches[combination];
+    for (let [index, h] of highlight.entries()) {
+        const elId = h[0] * 3 + h[1];
+        setTimeout(() => {
+            document.getElementById(elId).classList.add(`won${turn}`);
+        }, 400 * index);
+    }
+}
+
+const tieGame = () => {
+    setTimeout(() => {
+        result.querySelector("h2").innerHTML = "Draw!";
+        result.style.display = "flex";
+    }, 2000);
+}
+
+const choseNextToDisappear = () => {
+    if (turn === players.CIRCLE && playedO.length === 3) {
+        playedO[0].classList.add("next");
+    }
+    else if (turn === players.CROSS && playedX.length === 3) {
+        playedX[0].classList.add("next");
+    }
+}
+
+const getIndexesFromId = (id) => {
+    return [Math.floor(id / 3), id % 3];
+}
+
+const chooseTile = () => {
+    const [i, j] = getIndexesFromId(event.target.id);
+
+    if (table[i][j]) return;
+    event.target.classList.toggle(turn);
+    table[i][j] = turn;
+
+    if (turn === players.CIRCLE) {
+        const disappearedTile = playedO.length === 3 ? playedO.shift() : null;
+        if (disappearedTile) {
+            disappearedTile.className = "tile";
+            const [i, j] = getIndexesFromId(disappearedTile.id);
+            table[i][j] = null;
+        }
+        playedO.push(event.target);
+    }
+    else {
+        const disappearedTile = playedX.length === 3 ? playedX.shift() : null;
+        if (disappearedTile) {
+            disappearedTile.className = "tile";
+            const [i, j] = getIndexesFromId(disappearedTile.id);
+            table[i][j] = null;
+        }
+        playedX.push(event.target);
+    }
+
+    const winComb = checkBoard(turn, i, j);
+
+    if (winComb === "draw") {
+        tieGame();
+        return;
+    }
+    else if (winComb) {
+        winGame(winComb);
+        return;
+
+    }
+
+    turn = turn === players.CROSS ? players.CIRCLE : players.CROSS;
+    choseNextToDisappear();
+}
+
+initBoard();
+    </script>
+    
+</body>
+</html>

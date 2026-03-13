@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Snake Game</title>
+
+<style>
+
+body{
+background:black;
+color:white;
+text-align:center;
+font-family:Arial;
+}
+
+h2{
+color:cyan;
+text-shadow:0 0 15px cyan;
+}
+
+canvas{
+background:#111;
+border:3px solid cyan;
+box-shadow:0 0 20px cyan;
+margin-top:10px;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+border:none;
+border-radius:20px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.start{background:lime;}
+.restart{background:orange;}
+.back{background:red;color:white;}
+
+#message{
+font-size:22px;
+margin-top:10px;
+color:yellow;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🎮 Snake Game</h2>
+
+<h3>Score : <span id="score">0</span></h3>
+
+<canvas id="game" width="400" height="400"></canvas>
+
+<div>
+<button class="start" onclick="startGame()">Start</button>
+<button class="restart" onclick="restartGame()">Restart</button>
+<button class="back" onclick="history.back()">Back</button>
+</div>
+
+<div id="message"></div>
+
+<script>
+
+let canvas=document.getElementById("game")
+let ctx=canvas.getContext("2d")
+
+let snake=[{x:200,y:200}]
+let food={x:100,y:100}
+
+let dx=20
+let dy=0
+
+let score=0
+let gameInterval
+
+function draw(){
+
+ctx.clearRect(0,0,400,400)
+
+snake.forEach(part=>{
+ctx.fillStyle="lime"
+ctx.fillRect(part.x,part.y,20,20)
+})
+
+ctx.fillStyle="red"
+ctx.fillRect(food.x,food.y,20,20)
+
+let head={
+x:snake[0].x+dx,
+y:snake[0].y+dy
+}
+
+if(head.x<0 || head.x>=400 || head.y<0 || head.y>=400){
+gameOver()
+return
+}
+
+snake.unshift(head)
+
+if(head.x==food.x && head.y==food.y){
+
+score++
+document.getElementById("score").innerText=score
+
+food={
+x:Math.floor(Math.random()*20)*20,
+y:Math.floor(Math.random()*20)*20
+}
+
+if(score==15){
+winGame()
+}
+
+}else{
+snake.pop()
+}
+
+}
+
+function startGame(){
+gameInterval=setInterval(draw,120)
+}
+
+function restartGame(){
+
+clearInterval(gameInterval)
+
+snake=[{x:200,y:200}]
+food={x:100,y:100}
+dx=20
+dy=0
+score=0
+
+document.getElementById("score").innerText=0
+document.getElementById("message").innerText=""
+
+startGame()
+}
+
+function gameOver(){
+
+clearInterval(gameInterval)
+
+document.getElementById("message").innerText="💀 Game Over!"
+
+}
+
+function winGame(){
+
+clearInterval(gameInterval)
+
+document.getElementById("message").innerText="🏆 You Win!"
+
+}
+
+document.addEventListener("keydown",function(e){
+
+if(e.key=="ArrowUp"){dx=0;dy=-20}
+if(e.key=="ArrowDown"){dx=0;dy=20}
+if(e.key=="ArrowLeft"){dx=-20;dy=0}
+if(e.key=="ArrowRight"){dx=20;dy=0}
+
+})
+
+</script>
+
+</body>
+</html>

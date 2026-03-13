@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>3D Car Drive</title>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+background:#222;
+font-family:Arial;
+color:white;
+}
+
+#scoreBox{
+position:absolute;
+top:10px;
+right:20px;
+font-size:20px;
+}
+
+canvas{
+background:#333;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="scoreBox">
+Score: <span id="score">0</span>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+
+let canvas=document.getElementById("game")
+let ctx=canvas.getContext("2d")
+
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
+
+let carX=canvas.width/2
+let carY=canvas.height-120
+
+let speed=6
+
+let left=false
+let right=false
+
+let score=0
+
+let obstacles=[]
+
+setInterval(gameLoop,20)
+
+function gameLoop(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+drawRoad()
+
+drawCar()
+
+spawnObstacle()
+
+moveObstacle()
+
+checkCollision()
+
+}
+
+function drawRoad(){
+
+ctx.fillStyle="#555"
+
+ctx.fillRect(canvas.width/2-120,0,240,canvas.height)
+
+}
+
+function drawCar(){
+
+if(left) carX-=speed
+if(right) carX+=speed
+
+ctx.fillStyle="red"
+
+ctx.fillRect(carX,carY,40,70)
+
+}
+
+function spawnObstacle(){
+
+if(Math.random()<0.03){
+
+obstacles.push({
+
+x:canvas.width/2-100+Math.random()*200,
+y:-50
+
+})
+
+}
+
+}
+
+function moveObstacle(){
+
+ctx.fillStyle="yellow"
+
+for(let i=0;i<obstacles.length;i++){
+
+obstacles[i].y+=5
+
+ctx.fillRect(obstacles[i].x,obstacles[i].y,40,70)
+
+if(obstacles[i].y>canvas.height){
+
+obstacles.splice(i,1)
+
+score++
+
+document.getElementById("score").innerText=score
+
+}
+
+}
+
+}
+
+function checkCollision(){
+
+for(let i=0;i<obstacles.length;i++){
+
+if(
+carX < obstacles[i].x+40 &&
+carX+40 > obstacles[i].x &&
+carY < obstacles[i].y+70 &&
+carY+70 > obstacles[i].y
+){
+
+alert("Game Over")
+
+location.reload()
+
+}
+
+}
+
+}
+
+document.addEventListener("keydown",(e)=>{
+
+if(e.key=="ArrowLeft") left=true
+if(e.key=="ArrowRight") right=true
+
+})
+
+document.addEventListener("keyup",(e)=>{
+
+if(e.key=="ArrowLeft") left=false
+if(e.key=="ArrowRight") right=false
+
+})
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        overflow: hidden;
+        background: #87ceeb;
+        font-family: Arial, sans-serif;
+      }
+      #container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+      #info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 14px;
+        z-index: 100;
+      }
+      #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px;
+        border-radius: 4px;
+        font-size: 14px;
+        z-index: 100;
+        min-width: 200px;
+      }
+      #controls label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      #speedSlider {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      #speedValue {
+        font-size: 12px;
+        color: #aaa;
+      }
+      #threeCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    </style>
+</head>
+<body>
+    <div id="container">
+      <canvas id="threeCanvas"></canvas>
+      <div id="info">
+        <div><strong>Destroy the tower with the slingshot!</strong></div>
+        <div>Balls remaining: <span id="ballCount">5</span></div>
+        <div>Press SPACE to reset</div>
+      </div>
+      <div id="controls">
+        <label for="speedSlider">Physics Speed</label>
+        <input type="range" id="speedSlider" min="0.1" max="2.0" step="0.1" value="1.0">
+        <div id="speedValue">1.0x (Normal)</div>
+      </div>
+    </div>
+    <script>
+        async function initLibraries() {
+        console.log("Starting initialization...");
+
+        // 1. Wait for DOM to be ready
+        if (document.readyState === "loading") {
+          await new Promise((resolve) => {
+            document.addEventListener("DOMContentLoaded", resolve, {
+              once: true,
+            });
+          });
+        }
+        console.log("DOM ready");
+
+        // 2. Import THREE.js
+        const THREE = await import("https://esm.sh/three");
+        window.THREE = THREE;
+        console.log("THREE loaded:", THREE);
+
+        // 3. Import and initialize Nape
+        console.log("Initializing Nape...");
+        const { default: initNape } =
+          await import("https://cdn.skypack.dev/@newkrok/nape-js@1.0.0");
+        initNape();
+
+        // 4. Wait a moment for Nape to fully initialize
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        console.log("Nape initialized, window.nape:", window.nape);
+
+        const nape = window.nape;
+
+        if (!nape) {
+          console.error("Nape failed to load!");
+          const infoEl = document.getElementById("info");
+          if (infoEl) {
+            infoEl.innerHTML =
+              '<div style="color: red;">Error: Nape physics engine failed to load</div>';
+          }
+          throw new Error("Nape not loaded");
+        }
+
+        console.log("All libraries loaded successfully!");
+        return { nape, THREE };
+      }
+
+      // ============================================
+      // CONSTANTS
+      // ============================================
+      const PHYSICS = {
+        PIXEL_RATIO: 17,
+        GRAVITY: 350,
+        WIND: 0,
+        TIMESTEP: 1 / 60,
+        VELOCITY_ITERATIONS: 10,  // Több iteráció a pontosabb ütközésekhez
+        POSITION_ITERATIONS: 10,
+      };
+
+      const GAME_CONFIG = {
+        maxBalls: 5,
+        slingshotPosition: { x: -15, y: 0 },
+        slingshotMaxStretch: 5,
+        slingshotPower: 15,
+        ballRadius: 0.5,
+        towerPosition: { x: 15, y: 0 },
+      };
+
+      // ============================================
+      // NAPE PHYSICS WORLD
+      // ============================================
+      class NapeWorld {
+        constructor() {
+          this.pixelRatio = PHYSICS.PIXEL_RATIO;
+          this.space = new nape.space.Space(
+            new nape.geom.Vec2(PHYSICS.WIND, -PHYSICS.GRAVITY),
+          );
+
+          // Bullet-through megelőzése: jobb broadphase és CCD
+          if (this.space.get_broadphase) {
+            // Sweep and Prune használata (ha elérhető)
+            try {
+              this.space.set_sortingEnabled(true);
+            } catch (e) {
+              console.warn("Sorting not available in this Nape version");
+            }
+          }
+
+          this.paused = false;
+          this.breakableObjects = [];  // Törhető objektumok listája
+          this.previousVelocities = new Map();  // Előző frame sebességek
+          this.speedMultiplier = 1.0;  // Fizika sebesség szorzó
+        }
+
+        registerBreakable(obj) {
+          this.breakableObjects.push(obj);
+        }
+
+        unregisterBreakable(obj) {
+          const index = this.breakableObjects.indexOf(obj);
+          if (index > -1) {
+            this.breakableObjects.splice(index, 1);
+          }
+        }
+
+        checkCollisions() {
+          // Manuális ütközés ellenőrzés sebességváltozás alapján
+          for (const obj of this.breakableObjects) {
+            if (obj.isBroken) continue;
+
+            const body = obj.body;
+            const bodyId = body.get_id();
+
+            // Jelenlegi sebesség
+            const velocity = body.get_velocity();
+            const currentSpeed = Math.sqrt(
+              velocity.get_x() * velocity.get_x() +
+              velocity.get_y() * velocity.get_y()
+            );
+
+            // Előző sebesség
+            const prevVel = this.previousVelocities.get(bodyId);
+
+            if (prevVel) {
+              const prevSpeed = Math.sqrt(
+                prevVel.x * prevVel.x +
+                prevVel.y * prevVel.y
+              );
+
+              // Sebességváltozás (impulzus közelítés)
+              const deltaSpeed = Math.abs(currentSpeed - prevSpeed);
+              const mass = body.get_mass();
+              const impulse = deltaSpeed * mass;
+
+              // Ha nagy a sebességváltozás, valószínűleg ütközés történt
+              // Gravitáció okozta kis változásokat kiszűrjük (5 alatt)
+              if (impulse > 5) {
+                obj.checkImpulseBreak(impulse);
+              }
+            }
+
+            // Jelenlegi sebesség mentése
+            this.previousVelocities.set(bodyId, {
+              x: velocity.get_x(),
+              y: velocity.get_y()
+            });
+          }
+        }
+
+        step(dt) {
+          if (!this.paused) {
+            // Sebesség szorzó alkalmazása
+            const adjustedDt = dt * this.speedMultiplier;
+
+            // Sub-stepping: a timestep-et kisebb darabokra bontjuk
+            // Ez a leghatékonyabb módja a bullet-through megelőzésének
+            const subSteps = 4; // 4 kisebb lépésre bontjuk
+            const subDt = adjustedDt / subSteps;
+
+            for (let i = 0; i < subSteps; i++) {
+              this.space.step(
+                subDt,
+                PHYSICS.VELOCITY_ITERATIONS || 10,
+                PHYSICS.POSITION_ITERATIONS || 10
+              );
+            }
+
+            // Ütközések ellenőrzése minden step után
+            this.checkCollisions();
+          }
+        }
+
+        setSpeedMultiplier(multiplier) {
+          this.speedMultiplier = multiplier;
+        }
+
+        toWorldPosition(physicsPos) {
+          return {
+            x: physicsPos.x / this.pixelRatio,
+            y: physicsPos.y / this.pixelRatio,
+          };
+        }
+      }
+
+      // ============================================
+      // GROUND
+      // ============================================
+      class Ground {
+        constructor(world, scene) {
+          this.world = world;
+          this.scene = scene;
+          this.createPhysicsBody();
+          this.createVisualMesh();
+        }
+
+        createPhysicsBody() {
+          const pixelRatio = this.world.pixelRatio;
+          const groundMaterial = new nape.phys.Material(0.3, 0.8, 0.8, 1, 0);
+          const groundFilter = new nape.dynamics.InteractionFilter();
+          groundFilter.set_collisionGroup(1);
+          groundFilter.set_collisionMask(-1);
+
+          // Create a long static ground body
+          this.body = new nape.phys.Body(nape.phys.BodyType.get_STATIC());
+          const groundShape = new nape.shape.Polygon(
+            nape.shape.Polygon.box(100 * pixelRatio, 2 * pixelRatio),
+          );
+          groundShape.set_material(groundMaterial);
+          groundShape.set_filter(groundFilter);
+          this.body.get_shapes().add(groundShape);
+          this.body.set_position(new nape.geom.Vec2(0, -1 * pixelRatio));
+          this.body.set_space(this.world.space);
+        }
+
+        createVisualMesh() {
+          const geometry = new THREE.BoxGeometry(100, 2, 3);
+          const material = new THREE.MeshStandardMaterial({
+            color: 0x8b4513,
+            roughness: 0.9,
+            metalness: 0.1,
+          });
+          this.mesh = new THREE.Mesh(geometry, material);
+          this.mesh.position.set(0, -1, 0);
+          this.mesh.castShadow = true;
+          this.mesh.receiveShadow = true;
+          this.scene.add(this.mesh);
+        }
+      }
+
+      // ============================================
+      // BOX (for tower construction)
+      // ============================================
+      const BlockMaterials = {
+        WOOD: {
+          elasticity: 0.2,
+          staticFriction: 0.8,
+          dynamicFriction: 0.6,
+          density: 1.5,
+          color: 0xcd853f,
+          roughness: 0.9,
+          metalness: 0.0,
+          breakThreshold: 80  // Közepes törési küszöb
+        },
+        STONE: {
+          elasticity: 0.1,
+          staticFriction: 0.9,
+          dynamicFriction: 0.7,
+          density: 3.5,
+          color: 0x808080,
+          roughness: 1.0,
+          metalness: 0.0,
+          breakThreshold: 150  // Magas törési küszöb (nehéz eltörni)
+        },
+        ICE: {
+          elasticity: 0.05,
+          staticFriction: 0.3,
+          dynamicFriction: 0.2,
+          density: 1.2,
+          color: 0xb0e0e6,
+          roughness: 0.1,
+          metalness: 0.5,
+          breakThreshold: 40  // Alacsony törési küszöb (könnyen törik)
+        },
+        GLASS: {
+          elasticity: 0.1,
+          staticFriction: 0.4,
+          dynamicFriction: 0.3,
+          density: 1.0,
+          color: 0xadd8e6,
+          roughness: 0.0,
+          metalness: 0.9,
+          breakThreshold: 30  // Nagyon alacsony törési küszöb (nagyon törékeny)
+        }
+      };
+
+      class Box {
+        constructor(world, scene, position, size, materialType = 'WOOD') {
+          this.world = world;
+          this.scene = scene;
+          this.position = position;
+          this.size = size;
+          this.materialType = materialType;
+          this.materialProps = BlockMaterials[materialType];
+          this.isBroken = false;
+          this.shards = [];
+          this.lastImpactTime = 0;
+          this.createPhysicsBody();
+          this.createVisualMesh();
+
+          // Regisztráljuk a world-ben mint törhető objektum
+          this.world.registerBreakable(this);
+        }
+
+        createPhysicsBody() {
+          const pixelRatio = this.world.pixelRatio;
+          const props = this.materialProps;
+
+          const boxMaterial = new nape.phys.Material(
+            props.elasticity,
+            props.dynamicFriction,
+            props.staticFriction,
+            props.density,
+            0
+          );
+
+          const boxFilter = new nape.dynamics.InteractionFilter();
+          boxFilter.set_collisionGroup(3);
+          boxFilter.set_collisionMask(-1);
+
+          this.body = new nape.phys.Body(nape.phys.BodyType.get_DYNAMIC());
+          const boxShape = new nape.shape.Polygon(
+            nape.shape.Polygon.box(
+              this.size.width * pixelRatio,
+              this.size.height * pixelRatio,
+            ),
+          );
+          boxShape.set_material(boxMaterial);
+          boxShape.set_filter(boxFilter);
+          this.body.get_shapes().add(boxShape);
+          this.body.set_position(
+            new nape.geom.Vec2(
+              this.position.x * pixelRatio,
+              this.position.y * pixelRatio,
+            ),
+          );
+          this.body.set_space(this.world.space);
+        }
+
+        createVisualMesh() {
+          const geometry = new THREE.BoxGeometry(
+            this.size.width,
+            this.size.height,
+            this.size.depth || 1,
+          );
+          const material = new THREE.MeshStandardMaterial({
+            color: this.materialProps.color,
+            roughness: this.materialProps.roughness,
+            metalness: this.materialProps.metalness,
+            transparent: this.materialType === 'GLASS' || this.materialType === 'ICE',
+            opacity: this.materialType === 'GLASS' ? 0.6 : (this.materialType === 'ICE' ? 0.8 : 1.0)
+          });
+          this.mesh = new THREE.Mesh(geometry, material);
+          this.mesh.castShadow = true;
+          this.mesh.receiveShadow = true;
+          this.scene.add(this.mesh);
+        }
+
+        update() {
+          const pixelRatio = this.world.pixelRatio;
+          const position = this.body.get_position();
+          const rotation = this.body.get_rotation();
+
+          this.mesh.position.set(
+            position.get_x() / pixelRatio,
+            position.get_y() / pixelRatio,
+            0,
+          );
+          this.mesh.rotation.z = rotation;
+        }
+
+        checkImpulseBreak(impulseMagnitude) {
+          if (this.isBroken) return;
+
+          // Időalapú cooldown, hogy ne töröljön túl gyorsan többször
+          const now = performance.now();
+          if (now - this.lastImpactTime < 200) return;
+
+          console.log(`${this.materialType} impact: ${impulseMagnitude.toFixed(2)} / ${this.materialProps.breakThreshold}`);
+
+          // Ha az impulzus meghaladja a törési küszöböt
+          if (impulseMagnitude > this.materialProps.breakThreshold) {
+            this.lastImpactTime = now;
+            console.log(`💥 ${this.materialType} BREAK!`);
+            this.break();
+          }
+        }
+
+        break() {
+          if (this.isBroken) return;
+          this.isBroken = true;
+
+          // Eltüntetjük az eredeti blokkot
+          this.mesh.visible = false;
+          this.body.set_space(null);
+
+          // Töredékek létrehozása
+          this.createShards();
+        }
+
+        createShards() {
+          const pixelRatio = this.world.pixelRatio;
+          const position = this.body.get_position();
+          const velocity = this.body.get_velocity();
+          const angularVel = this.body.get_angularVel();
+
+          // 4-6 töredékre törjük (kis random darabok)
+          const numShards = 4 + Math.floor(Math.random() * 3);
+
+          for (let i = 0; i < numShards; i++) {
+            // Kisebb random méret
+            const shardSize = {
+              width: this.size.width * (0.2 + Math.random() * 0.3),
+              height: this.size.height * (0.2 + Math.random() * 0.3),
+              depth: this.size.depth || 1
+            };
+
+            // Random pozíció az eredeti blokk körül
+            const offsetX = (Math.random() - 0.5) * this.size.width;
+            const offsetY = (Math.random() - 0.5) * this.size.height;
+
+            // Töredék body
+            const shardBody = new nape.phys.Body(nape.phys.BodyType.get_DYNAMIC());
+            const shardShape = new nape.shape.Polygon(
+              nape.shape.Polygon.box(
+                shardSize.width * pixelRatio,
+                shardSize.height * pixelRatio
+              )
+            );
+
+            const shardMaterial = new nape.phys.Material(
+              this.materialProps.elasticity * 0.8,
+              this.materialProps.dynamicFriction,
+              this.materialProps.staticFriction,
+              this.materialProps.density * 0.5,  // Könnyebb töredékek
+              0
+            );
+            shardShape.set_material(shardMaterial);
+
+            const shardFilter = new nape.dynamics.InteractionFilter();
+            shardFilter.set_collisionGroup(5);  // Külön csoport a töredékeknek
+            shardFilter.set_collisionMask(-1);
+            shardShape.set_filter(shardFilter);
+
+            shardBody.get_shapes().add(shardShape);
+            shardBody.set_position(
+              new nape.geom.Vec2(
+                position.get_x() + offsetX * pixelRatio,
+                position.get_y() + offsetY * pixelRatio
+              )
+            );
+
+            // Örököljük a sebességet + random szétrepülés
+            const explosionForce = 50 + Math.random() * 100;
+            const explosionAngle = Math.random() * Math.PI * 2;
+            shardBody.set_velocity(
+              new nape.geom.Vec2(
+                velocity.get_x() + Math.cos(explosionAngle) * explosionForce,
+                velocity.get_y() + Math.sin(explosionAngle) * explosionForce
+              )
+            );
+            shardBody.set_angularVel(angularVel + (Math.random() - 0.5) * 20);
+            shardBody.set_space(this.world.space);
+
+            // Vizuális mesh
+            const shardGeometry = new THREE.BoxGeometry(
+              shardSize.width,
+              shardSize.height,
+              shardSize.depth
+            );
+            const shardMaterial3D = new THREE.MeshStandardMaterial({
+              color: this.materialProps.color,
+              roughness: this.materialProps.roughness,
+              metalness: this.materialProps.metalness,
+              transparent: this.materialType === 'GLASS' || this.materialType === 'ICE',
+              opacity: this.materialType === 'GLASS' ? 0.6 : (this.materialType === 'ICE' ? 0.8 : 1.0)
+            });
+            const shardMesh = new THREE.Mesh(shardGeometry, shardMaterial3D);
+            shardMesh.castShadow = true;
+            shardMesh.receiveShadow = true;
+            this.scene.add(shardMesh);
+
+            this.shards.push({
+              body: shardBody,
+              mesh: shardMesh,
+              lifetime: 5.0  // 5 másodperc után eltűnnek
+            });
+          }
+        }
+
+        update() {
+          const pixelRatio = this.world.pixelRatio;
+
+          if (!this.isBroken) {
+            const position = this.body.get_position();
+            const rotation = this.body.get_rotation();
+
+            this.mesh.position.set(
+              position.get_x() / pixelRatio,
+              position.get_y() / pixelRatio,
+              0,
+            );
+            this.mesh.rotation.z = rotation;
+          } else {
+            // Frissítjük a töredékeket
+            for (let i = this.shards.length - 1; i >= 0; i--) {
+              const shard = this.shards[i];
+              const position = shard.body.get_position();
+              const rotation = shard.body.get_rotation();
+
+              shard.mesh.position.set(
+                position.get_x() / pixelRatio,
+                position.get_y() / pixelRatio,
+                0
+              );
+              shard.mesh.rotation.z = rotation;
+
+              // Lifetime kezelés
+              shard.lifetime -= 0.016;  // ~60fps
+              if (shard.lifetime <= 0) {
+                // Eltávolítás
+                shard.body.set_space(null);
+                this.scene.remove(shard.mesh);
+                shard.mesh.geometry.dispose();
+                shard.mesh.material.dispose();
+                this.shards.splice(i, 1);
+              } else if (shard.lifetime < 1.0) {
+                // Halványítás az utolsó másodpercben
+                if (shard.mesh.material.transparent) {
+                  shard.mesh.material.opacity *= 0.95;
+                } else {
+                  shard.mesh.material.transparent = true;
+                  shard.mesh.material.opacity = 0.95;
+                }
+              }
+            }
+          }
+        }
+
+        reset() {
+          const pixelRatio = this.world.pixelRatio;
+
+          // Töredékek eltávolítása
+          for (const shard of this.shards) {
+            shard.body.set_space(null);
+            this.scene.remove(shard.mesh);
+            shard.mesh.geometry.dispose();
+            shard.mesh.material.dispose();
+          }
+          this.shards = [];
+          this.isBroken = false;
+          this.lastImpactTime = 0;
+
+          // Eredeti blokk visszaállítása
+          this.mesh.visible = true;
+          this.body.set_space(this.world.space);
+          this.body.set_position(
+            new nape.geom.Vec2(
+              this.position.x * pixelRatio,
+              this.position.y * pixelRatio,
+            ),
+          );
+          this.body.set_rotation(0);
+          this.body.set_velocity(new nape.geom.Vec2(0, 0));
+          this.body.set_angularVel(0);
+          this.update();
+        }
+
+        destroy() {
+          // Cleanup - eltávolítás a breakableObjects listából
+          this.world.unregisterBreakable(this);
+
+          // Töredékek eltávolítása
+          for (const shard of this.shards) {
+            shard.body.set_space(null);
+            this.scene.remove(shard.mesh);
+            shard.mesh.geometry.dispose();
+            shard.mesh.material.dispose();
+          }
+
+          // Eredeti test és mesh eltávolítása
+          this.body.set_space(null);
+          this.scene.remove(this.mesh);
+          this.mesh.geometry.dispose();
+          this.mesh.material.dispose();
+        }
+      }
+
+      // ============================================
+      // BALL (projectile)
+      // ============================================
+      class Ball {
+        constructor(world, scene, position) {
+          this.world = world;
+          this.scene = scene;
+          this.position = position;
+          this.radius = GAME_CONFIG.ballRadius;
+          this.active = false;
+          this.loaded = false; // Is the ball loaded in slingshot?
+          this.createPhysicsBody();
+          this.createVisualMesh();
+        }
+
+        createPhysicsBody() {
+          const pixelRatio = this.world.pixelRatio;
+          const ballMaterial = new nape.phys.Material(0.4, 0.5, 0.5, 1.5, 0.1);
+          const ballFilter = new nape.dynamics.InteractionFilter();
+          ballFilter.set_collisionGroup(4);
+          ballFilter.set_collisionMask(-1);
+
+          // Start as KINEMATIC (no physics, no gravity, no collisions)
+          this.body = new nape.phys.Body(nape.phys.BodyType.get_KINEMATIC());
+          const ballShape = new nape.shape.Circle(this.radius * pixelRatio);
+          ballShape.set_material(ballMaterial);
+          ballShape.set_filter(ballFilter);
+
+          // KRITIKUS: Continuous Collision Detection bekapcsolása a bullet-through ellen
+          ballShape.set_sensorEnabled(false);
+
+          this.body.get_shapes().add(ballShape);
+          this.body.set_position(
+            new nape.geom.Vec2(
+              this.position.x * pixelRatio,
+              this.position.y * pixelRatio,
+            ),
+          );
+
+          // CCD beállítás a body-n
+          this.body.set_allowMovement(true);
+          this.body.set_allowRotation(true);
+
+          this.body.set_space(this.world.space);
+        }
+
+        createVisualMesh() {
+          const geometry = new THREE.SphereGeometry(this.radius, 16, 16);
+          const material = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            roughness: 0.5,
+            metalness: 0.2,
+          });
+          this.mesh = new THREE.Mesh(geometry, material);
+          this.mesh.castShadow = true;
+          this.mesh.receiveShadow = true;
+          this.mesh.visible = false; // Hidden by default
+          this.scene.add(this.mesh);
+        }
+
+        loadIntoSlingshot() {
+          // Ball is loaded into slingshot, keep it KINEMATIC (no gravity)
+          this.loaded = true;
+          this.body.set_type(nape.phys.BodyType.get_KINEMATIC());
+          this.mesh.visible = true; // Make visible when loaded
+        }
+
+        launch(velocityX, velocityY) {
+          const pixelRatio = this.world.pixelRatio;
+
+          // Now make it DYNAMIC so physics applies
+          this.body.set_type(nape.phys.BodyType.get_DYNAMIC());
+          this.body.set_velocity(
+            new nape.geom.Vec2(velocityX * pixelRatio, velocityY * pixelRatio),
+          );
+          this.active = true;
+          this.loaded = false;
+
+          // Update the stored position to be far away (for reset)
+          this.position.x = -100;
+          this.position.y = -100;
+        }
+
+        update() {
+          const pixelRatio = this.world.pixelRatio;
+          const position = this.body.get_position();
+          const rotation = this.body.get_rotation();
+
+          this.mesh.position.set(
+            position.get_x() / pixelRatio,
+            position.get_y() / pixelRatio,
+            0,
+          );
+          this.mesh.rotation.z = rotation;
+        }
+
+        reset() {
+          const pixelRatio = this.world.pixelRatio;
+
+          // Reset to KINEMATIC (inactive, no physics)
+          this.body.set_type(nape.phys.BodyType.get_KINEMATIC());
+          this.body.set_position(
+            new nape.geom.Vec2(
+              this.position.x * pixelRatio,
+              this.position.y * pixelRatio,
+            ),
+          );
+          this.body.set_rotation(0);
+          this.body.set_velocity(new nape.geom.Vec2(0, 0));
+          this.body.set_angularVel(0);
+          this.active = false;
+          this.loaded = false;
+          this.mesh.visible = false; // Hide again when reset
+          this.update();
+        }
+
+        setPosition(x, y) {
+          // For slingshot dragging - only works when KINEMATIC
+          if (this.loaded) {
+            const pixelRatio = this.world.pixelRatio;
+            this.body.set_position(
+              new nape.geom.Vec2(x * pixelRatio, y * pixelRatio),
+            );
+          }
+        }
+
+        getPosition() {
+          const position = this.body.get_position();
+          return this.world.toWorldPosition({
+            x: position.get_x(),
+            y: position.get_y(),
+          });
+        }
+      }
+
+      // ============================================
+      // SLINGSHOT
+      // ============================================
+      class Slingshot {
+        constructor(world, scene, position) {
+          this.world = world;
+          this.scene = scene;
+          this.position = position;
+          this.isDragging = false;
+          this.dragPosition = { x: position.x, y: position.y };
+          this.currentBall = null;
+
+          this.createVisualElements();
+        }
+
+        createVisualElements() {
+          // Slingshot base (Y-shaped structure) - inverted V shape
+          const postGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 8);
+          const postMaterial = new THREE.MeshStandardMaterial({
+            color: 0x654321,
+          });
+          this.leftPost = new THREE.Mesh(postGeometry, postMaterial);
+          this.leftPost.position.set(this.position.x - 0.5, this.position.y + 1.5, 0);
+          this.leftPost.rotation.z = 0.2; // Reversed angle
+          this.scene.add(this.leftPost);
+
+          this.rightPost = new THREE.Mesh(postGeometry, postMaterial);
+          this.rightPost.position.set(this.position.x + 0.5, this.position.y + 1.5, 0);
+          this.rightPost.rotation.z = -0.2; // Reversed angle
+          this.scene.add(this.rightPost);
+
+          // Store the attachment points for the bands (top of the posts)
+          this.leftAttachPoint = { x: this.position.x - 0.8, y: this.position.y + 2.8 };
+          this.rightAttachPoint = { x: this.position.x + 0.8, y: this.position.y + 2.8 };
+
+          // Elastic band (will be updated dynamically)
+          this.createBand();
+        }
+
+        createBand() {
+          if (this.bandLeft) {
+            this.scene.remove(this.bandLeft);
+            this.bandLeft.geometry.dispose();
+          }
+          if (this.bandRight) {
+            this.scene.remove(this.bandRight);
+            this.bandRight.geometry.dispose();
+          }
+
+          const bandMaterial = new THREE.LineBasicMaterial({
+            color: 0x333333,
+            linewidth: 3,
+          });
+
+          const leftPoints = [
+            new THREE.Vector3(this.leftAttachPoint.x, this.leftAttachPoint.y, 0),
+            new THREE.Vector3(this.dragPosition.x, this.dragPosition.y, 0),
+          ];
+          const leftGeometry = new THREE.BufferGeometry().setFromPoints(leftPoints);
+          this.bandLeft = new THREE.Line(leftGeometry, bandMaterial);
+          this.scene.add(this.bandLeft);
+
+          const rightPoints = [
+            new THREE.Vector3(this.rightAttachPoint.x, this.rightAttachPoint.y, 0),
+            new THREE.Vector3(this.dragPosition.x, this.dragPosition.y, 0),
+          ];
+          const rightGeometry = new THREE.BufferGeometry().setFromPoints(rightPoints);
+          this.bandRight = new THREE.Line(rightGeometry, bandMaterial);
+          this.scene.add(this.bandRight);
+
+          // Trajectory preview frissítése
+          this.updateTrajectoryPreview();
+        }
+
+        updateTrajectoryPreview() {
+          // Töröljük a korábbi pálya vizualizációt
+          if (this.trajectoryLine) {
+            this.scene.remove(this.trajectoryLine);
+            this.trajectoryLine.geometry.dispose();
+            this.trajectoryLine.material.dispose();
+          }
+
+          // Csak akkor mutatjuk, ha húzzuk a csúzlit
+          if (!this.isDragging || !this.currentBall) {
+            return;
+          }
+
+          // Számoljuk ki a kilövési sebességet
+          const centerX = (this.leftAttachPoint.x + this.rightAttachPoint.x) / 2;
+          const centerY = (this.leftAttachPoint.y + this.rightAttachPoint.y) / 2;
+
+          const velocityX = (centerX - this.dragPosition.x) * GAME_CONFIG.slingshotPower;
+          const velocityY = (centerY - this.dragPosition.y) * GAME_CONFIG.slingshotPower;
+
+          // Pálya pontjainak generálása
+          const trajectoryPoints = [];
+          const numPoints = 30; // Hány pontból álljon a pálya
+          const timeStep = 0.05; // Időlépések (másodperc)
+
+          let x = this.dragPosition.x;
+          let y = this.dragPosition.y;
+          let vx = velocityX;
+          let vy = velocityY;
+
+          // Gravitáció (PHYSICS.GRAVITY pixel/s² -> world koordinátákba)
+          const gravity = PHYSICS.GRAVITY / PHYSICS.PIXEL_RATIO;
+
+          for (let i = 0; i < numPoints; i++) {
+            trajectoryPoints.push(new THREE.Vector3(x, y, 0));
+
+            // Következő pozíció számítása (egyszerű euler integráció)
+            x += vx * timeStep;
+            y += vy * timeStep;
+            vy -= gravity * timeStep; // Gravitáció hatása
+
+            // Ha a föld alá érne, megállunk
+            if (y < -1) break;
+          }
+
+          // Pálya megjelenítése pontozott vonalként
+          const trajectoryMaterial = new THREE.LineDashedMaterial({
+            color: 0xffff00, // Sárga szín
+            linewidth: 2,
+            dashSize: 0.3,
+            gapSize: 0.2,
+            opacity: 0.7,
+            transparent: true
+          });
+
+          const trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
+          this.trajectoryLine = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+          this.trajectoryLine.computeLineDistances(); // Szükséges a dashed line-hoz
+          this.scene.add(this.trajectoryLine);
+        }
+
+        loadBall(ball) {
+          this.currentBall = ball;
+          this.currentBall.loadIntoSlingshot();
+          // Start at center between attachment points
+          const centerX = (this.leftAttachPoint.x + this.rightAttachPoint.x) / 2;
+          const centerY = (this.leftAttachPoint.y + this.rightAttachPoint.y) / 2;
+          this.dragPosition = { x: centerX, y: centerY };
+          this.updateBallPosition();
+          this.createBand();
+        }
+
+        startDrag(x, y) {
+          if (!this.currentBall) return;
+          this.isDragging = true;
+          this.updateDragPosition(x, y);
+        }
+
+        updateDragPosition(x, y) {
+          if (!this.isDragging) return;
+
+          // Calculate center point between attachment points
+          const centerX = (this.leftAttachPoint.x + this.rightAttachPoint.x) / 2;
+          const centerY = (this.leftAttachPoint.y + this.rightAttachPoint.y) / 2;
+
+          // Limit drag distance from center point
+          const dx = x - centerX;
+          const dy = y - centerY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance > GAME_CONFIG.slingshotMaxStretch) {
+            const angle = Math.atan2(dy, dx);
+            this.dragPosition.x = centerX + Math.cos(angle) * GAME_CONFIG.slingshotMaxStretch;
+            this.dragPosition.y = centerY + Math.sin(angle) * GAME_CONFIG.slingshotMaxStretch;
+          } else {
+            this.dragPosition.x = x;
+            this.dragPosition.y = y;
+          }
+
+          this.updateBallPosition();
+          this.createBand();
+        }
+
+        updateBallPosition() {
+          if (!this.currentBall) return;
+          this.currentBall.setPosition(this.dragPosition.x, this.dragPosition.y);
+          this.currentBall.update();
+        }
+
+        releaseBall() {
+          if (!this.isDragging || !this.currentBall) return;
+
+          this.isDragging = false;
+
+          // Calculate the center point between the two attachment points
+          const centerX = (this.leftAttachPoint.x + this.rightAttachPoint.x) / 2;
+          const centerY = (this.leftAttachPoint.y + this.rightAttachPoint.y) / 2;
+
+          // Calculate launch velocity from drag position to center point
+          const dx = (centerX - this.dragPosition.x) * GAME_CONFIG.slingshotPower;
+          const dy = (centerY - this.dragPosition.y) * GAME_CONFIG.slingshotPower;
+
+          this.currentBall.launch(dx, dy);
+          this.currentBall = null;
+
+          // Reset band to rest position (center between attachment points)
+          this.dragPosition = { x: centerX, y: centerY };
+          this.createBand();
+
+          // Töröljük a trajectory preview-t
+          if (this.trajectoryLine) {
+            this.scene.remove(this.trajectoryLine);
+            this.trajectoryLine.geometry.dispose();
+            this.trajectoryLine.material.dispose();
+            this.trajectoryLine = null;
+          }
+        }
+      }
+
+      // ============================================
+      // INPUT MANAGER
+      // ============================================
+      class InputManager {
+        constructor(canvas) {
+          this.canvas = canvas;
+          this.keys = {};
+          this.mouseDown = false;
+          this.mousePosition = { x: 0, y: 0 };
+          this.onMouseDownCallback = null;
+          this.onMouseMoveCallback = null;
+          this.onMouseUpCallback = null;
+
+          window.addEventListener("keydown", (e) => {
+            this.keys[e.key] = true;
+          });
+          window.addEventListener("keyup", (e) => {
+            this.keys[e.key] = false;
+          });
+
+          this.canvas.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+          this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+          this.canvas.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+        }
+
+        handleMouseDown(e) {
+          this.mouseDown = true;
+          this.updateMousePosition(e);
+          if (this.onMouseDownCallback) {
+            this.onMouseDownCallback(this.mousePosition.x, this.mousePosition.y);
+          }
+        }
+
+        handleMouseMove(e) {
+          this.updateMousePosition(e);
+          if (this.onMouseMoveCallback) {
+            this.onMouseMoveCallback(this.mousePosition.x, this.mousePosition.y);
+          }
+        }
+
+        handleMouseUp(e) {
+          this.mouseDown = false;
+          this.updateMousePosition(e);
+          if (this.onMouseUpCallback) {
+            this.onMouseUpCallback(this.mousePosition.x, this.mousePosition.y);
+          }
+        }
+
+        updateMousePosition(e) {
+          const rect = this.canvas.getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+          this.mousePosition = { x, y };
+        }
+
+        isKeyPressed(key) {
+          return this.keys[key] || false;
+        }
+
+        isSpacePressed() {
+          return this.isKeyPressed(" ");
+        }
+      }
+
+      // ============================================
+      // THREE.JS RENDERER
+      // ============================================
+      class ThreeRenderer {
+        constructor(canvasId) {
+          this.canvas = document.getElementById(canvasId);
+          this.scene = new THREE.Scene();
+          this.scene.background = new THREE.Color(0x87ceeb);
+
+          this.camera = new THREE.PerspectiveCamera(
+            50,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000,
+          );
+          // Initial position will be set by updateCameraToFitScene
+          this.camera.position.set(0, 3, 25);
+          this.camera.lookAt(0, 3, 0);
+
+          this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+          });
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.renderer.shadowMap.enabled = true;
+
+          // Lights
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+          this.scene.add(ambientLight);
+
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+          directionalLight.position.set(10, 20, 10);
+          directionalLight.castShadow = true;
+          directionalLight.shadow.camera.left = -30;
+          directionalLight.shadow.camera.right = 30;
+          directionalLight.shadow.camera.top = 30;
+          directionalLight.shadow.camera.bottom = -30;
+          this.scene.add(directionalLight);
+
+          // Raycaster for mouse picking
+          this.raycaster = new THREE.Raycaster();
+
+          // Game bounds for dynamic camera
+          this.gameBounds = null;
+
+          window.addEventListener("resize", () => this.onWindowResize());
+        }
+
+        setGameBounds(bounds) {
+          // Store the game bounds (min/max x, y coordinates)
+          this.gameBounds = bounds;
+          this.updateCameraToFitScene();
+        }
+
+        updateCameraToFitScene() {
+          if (!this.gameBounds) return;
+
+          const { minX, maxX, minY, maxY } = this.gameBounds;
+
+          // Calculate the center of the play area
+          const centerX = (minX + maxX) / 2;
+          const centerY = (minY + maxY) / 2;
+
+          // Calculate the dimensions
+          const width = maxX - minX;
+          const height = maxY - minY;
+
+          // Add padding (35% extra space around the content for more comfortable view)
+          const padding = 1.35;
+          const paddedWidth = width * padding;
+          const paddedHeight = height * padding;
+
+          // Get camera FOV in radians
+          const fov = this.camera.fov * (Math.PI / 180);
+          const aspect = this.camera.aspect;
+
+          // Calculate required distance to fit width and height
+          // We need to fit both dimensions, so we take the maximum
+          const distanceForHeight = (paddedHeight / 2) / Math.tan(fov / 2);
+          const distanceForWidth = (paddedWidth / 2) / Math.tan(fov / 2) / aspect;
+
+          // Use the larger distance to ensure everything fits
+          const distance = Math.max(distanceForHeight, distanceForWidth);
+
+          // Shift camera to the left slightly to give more space for slingshot
+          // This makes the slingshot more comfortable to use (moves it away from the edge)
+          const cameraOffsetX = width * 0.05; // Shift left by 5% of total width
+
+          // Set camera position
+          this.camera.position.set(centerX - cameraOffsetX, centerY, distance);
+          this.camera.lookAt(centerX - cameraOffsetX, centerY, 0);
+
+          console.log(`Camera updated: center(${(centerX + cameraOffsetX).toFixed(1)}, ${centerY.toFixed(1)}), distance: ${distance.toFixed(1)}`);
+        }
+
+        onWindowResize() {
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+          // Recalculate camera position when window resizes
+          this.updateCameraToFitScene();
+        }
+
+        getWorldPositionFromMouse(mouseX, mouseY) {
+          this.raycaster.setFromCamera({ x: mouseX, y: mouseY }, this.camera);
+
+          // Intersect with a plane at z=0
+          const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+          const intersection = new THREE.Vector3();
+          this.raycaster.ray.intersectPlane(plane, intersection);
+
+          return { x: intersection.x, y: intersection.y };
+        }
+
+        render() {
+          this.renderer.render(this.scene, this.camera);
+        }
+      }
+
+      // ============================================
+      // GAME LOOP
+      // ============================================
+      class GameLoop {
+        constructor() {
+          this.running = false;
+          this.lastTime = 0;
+          this.accumulator = 0;
+          this.fixedDeltaTime = PHYSICS.TIMESTEP;
+        }
+
+        start(updateCallback, renderCallback) {
+          this.running = true;
+          this.updateCallback = updateCallback;
+          this.renderCallback = renderCallback;
+          this.lastTime = performance.now();
+          this.loop(this.lastTime);
+        }
+
+        loop(currentTime) {
+          if (!this.running) return;
+
+          const deltaTime = (currentTime - this.lastTime) / 1000;
+          this.lastTime = currentTime;
+          this.accumulator += deltaTime;
+
+          while (this.accumulator >= this.fixedDeltaTime) {
+            this.updateCallback(this.fixedDeltaTime);
+            this.accumulator -= this.fixedDeltaTime;
+          }
+
+          this.renderCallback();
+          requestAnimationFrame((time) => this.loop(time));
+        }
+
+        stop() {
+          this.running = false;
+        }
+      }
+
+      // ============================================
+      // MAIN APPLICATION
+      // ============================================
+      class GameApp {
+        constructor() {
+          this.world = new NapeWorld();
+          this.threeRenderer = new ThreeRenderer("threeCanvas");
+
+          // Create ground
+          this.ground = new Ground(this.world, this.threeRenderer.scene);
+
+          // Create tower (simple stacked boxes)
+          this.boxes = this.createTower();
+
+          // Create balls (store them far away from the play area)
+          this.balls = [];
+          for (let i = 0; i < GAME_CONFIG.maxBalls; i++) {
+            const ball = new Ball(
+              this.world,
+              this.threeRenderer.scene,
+              {
+                x: -100, // Far away from play area
+                y: -100,
+              },
+            );
+            this.balls.push(ball);
+          }
+
+          // Create slingshot
+          this.slingshot = new Slingshot(
+            this.world,
+            this.threeRenderer.scene,
+            GAME_CONFIG.slingshotPosition,
+          );
+
+          // Calculate and set game bounds for dynamic camera
+          this.calculateGameBounds();
+
+          // Game state
+          this.currentBallIndex = 0;
+          this.loadNextBall();
+
+          // Input
+          this.input = new InputManager(this.threeRenderer.canvas);
+          this.setupInputCallbacks();
+
+          // Game loop
+          this.gameLoop = new GameLoop();
+          this.gameLoop.start(
+            (dt) => this.update(dt),
+            () => this.render(),
+          );
+
+          this.updateBallCountUI();
+          this.setupSpeedControl();
+          console.log("Slingshot Demolition Game initialized!");
+        }
+
+        setupSpeedControl() {
+          const slider = document.getElementById('speedSlider');
+          const speedValue = document.getElementById('speedValue');
+
+          slider.addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            this.world.setSpeedMultiplier(speed);
+
+            let label = 'Normal';
+            if (speed < 0.5) label = 'Very Slow';
+            else if (speed < 0.8) label = 'Slow';
+            else if (speed < 1.2) label = 'Normal';
+            else if (speed < 1.5) label = 'Fast';
+            else label = 'Very Fast';
+
+            speedValue.textContent = `${speed.toFixed(1)}x (${label})`;
+          });
+        }
+
+        calculateGameBounds() {
+          // Calculate the bounding box of the entire play area
+          // This includes the slingshot and the tower
+
+          const slingshotX = GAME_CONFIG.slingshotPosition.x;
+          const towerX = GAME_CONFIG.towerPosition.x;
+          const scale = 2.0; // Same scale used in tower creation
+
+          // Slingshot bounds (estimated)
+          const slingshotMinX = slingshotX - 1;
+          const slingshotMaxX = slingshotX + 1;
+          const slingshotMinY = -1;
+          const slingshotMaxY = 4;
+
+          // Tower bounds (based on tower structure)
+          const towerMinX = towerX - 3.5 * scale;
+          const towerMaxX = towerX + 3.5 * scale;
+          const towerMinY = -1;
+          // Calculate max tower height (level7Y + half block height)
+          const groundY = 0.3 * scale;
+          const level1Y = groundY + 0.6 * scale / 2 + 0.8 * scale / 2; // shortPillar.height = 0.8 * scale
+          const level2Y = level1Y + 0.8 * scale / 2 + 0.4 * scale / 2; // mediumBlock.height = 0.4 * scale
+          const level3Y = level2Y + 0.4 * scale / 2 + 1.6 * scale / 2; // tallBlock.height = 1.6 * scale
+          const level4Y = level3Y + 1.6 * scale / 2 + 0.4 * scale / 2;
+          const level5Y = level4Y + 0.4 * scale / 2 + 0.8 * scale / 2;
+          const level6Y = level5Y + 0.8 * scale / 2 + 0.4 * scale / 2; // smallBlock.height = 0.4 * scale
+          const level7Y = level6Y + 0.4 * scale / 2 + 0.4 * scale / 2;
+          const towerMaxY = level7Y + 0.4 * scale / 2;
+
+          // Combine bounds
+          const bounds = {
+            minX: Math.min(slingshotMinX, towerMinX),
+            maxX: Math.max(slingshotMaxX, towerMaxX),
+            minY: Math.min(slingshotMinY, towerMinY),
+            maxY: Math.max(slingshotMaxY, towerMaxY),
+          };
+
+          console.log('Game bounds:', bounds);
+          this.threeRenderer.setGameBounds(bounds);
+        }
+
+        createTower() {
+          const boxes = [];
+          const baseX = GAME_CONFIG.towerPosition.x;
+          const baseY = GAME_CONFIG.towerPosition.y;
+          const blockDepth = 0.8;
+
+          // 2x-es méretskála
+          const scale = 2.0;
+
+          // Építőelemek méretei (2x-es)
+          const smallBlock = { width: 0.4 * scale, height: 0.4 * scale };
+          const longBlock = { width: 2.0 * scale, height: 0.4 * scale };
+          const mediumBlock = { width: 1.0 * scale, height: 0.4 * scale };
+          const tallBlock = { width: 0.4 * scale, height: 1.6 * scale };
+          const shortPillar = { width: 0.4 * scale, height: 0.8 * scale };
+
+          // SZINT 0 - Széles földi alap (folytonos)
+          const groundY = baseY + 0.3 * scale;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 3.0 * scale, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 2.0 * scale, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.0 * scale, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.0 * scale, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 2.0 * scale, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 3.0 * scale, y: groundY },
+              { width: mediumBlock.width, height: 0.6 * scale, depth: blockDepth },
+              'STONE'
+            )
+          );
+
+          // SZINT 1 - Alsó oszlopok (folytonos sor)
+          let level1Y = groundY + 0.6 * scale / 2 + shortPillar.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 3.0 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 2.2 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.4 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 0.6 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 0.6 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.4 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 2.2 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 3.0 * scale, y: level1Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'WOOD'
+            )
+          );
+
+          // SZINT 2 - Első emelet padló (hosszú gerendák)
+          let level2Y = level1Y + shortPillar.height / 2 + mediumBlock.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 2.5 * scale, y: level2Y },
+              { width: longBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'ICE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 0.5 * scale, y: level2Y },
+              { width: longBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'ICE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.5 * scale, y: level2Y },
+              { width: longBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'ICE'
+            )
+          );
+
+          // SZINT 3 - Középső magas oszlopok
+          let level3Y = level2Y + mediumBlock.height / 2 + tallBlock.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 2.4 * scale, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.6 * scale, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 0.8 * scale, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 0.8 * scale, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.6 * scale, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 2.4 * scale, y: level3Y },
+              { width: tallBlock.width, height: tallBlock.height, depth: blockDepth },
+              'STONE'
+            )
+          );
+
+          // SZINT 4 - Második emelet padló
+          let level4Y = level3Y + tallBlock.height / 2 + mediumBlock.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 2.0 * scale, y: level4Y },
+              { width: mediumBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.0 * scale, y: level4Y },
+              { width: mediumBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'ICE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX, y: level4Y },
+              { width: mediumBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.0 * scale, y: level4Y },
+              { width: mediumBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'ICE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 2.0 * scale, y: level4Y },
+              { width: mediumBlock.width, height: mediumBlock.height, depth: blockDepth },
+              'WOOD'
+            )
+          );
+
+          // SZINT 5 - Felső kisebb oszlopok
+          let level5Y = level4Y + mediumBlock.height / 2 + shortPillar.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.5 * scale, y: level5Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'GLASS'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 0.5 * scale, y: level5Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'GLASS'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 0.5 * scale, y: level5Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'GLASS'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.5 * scale, y: level5Y },
+              { width: shortPillar.width, height: shortPillar.height, depth: blockDepth },
+              'GLASS'
+            )
+          );
+
+          // SZINT 6 - Csúcs blokkok
+          let level6Y = level5Y + shortPillar.height / 2 + smallBlock.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.5 * scale, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 1.0 * scale, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 0.5 * scale, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'ICE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'GLASS'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 0.5 * scale, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'ICE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.0 * scale, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'WOOD'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 1.5 * scale, y: level6Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'STONE'
+            )
+          );
+
+          // SZINT 7 - Koronázó elemek
+          let level7Y = level6Y + smallBlock.height / 2 + smallBlock.height / 2;
+          boxes.push(
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX - 0.5 * scale, y: level7Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'GLASS'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX, y: level7Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'STONE'
+            ),
+            new Box(
+              this.world,
+              this.threeRenderer.scene,
+              { x: baseX + 0.5 * scale, y: level7Y },
+              { width: smallBlock.width, height: smallBlock.height, depth: blockDepth },
+              'GLASS'
+            )
+          );
+
+          return boxes;
+        }
+
+        setupInputCallbacks() {
+          this.input.onMouseDownCallback = (mouseX, mouseY) => {
+            const worldPos = this.threeRenderer.getWorldPositionFromMouse(mouseX, mouseY);
+            this.slingshot.startDrag(worldPos.x, worldPos.y);
+          };
+
+          this.input.onMouseMoveCallback = (mouseX, mouseY) => {
+            const worldPos = this.threeRenderer.getWorldPositionFromMouse(mouseX, mouseY);
+            this.slingshot.updateDragPosition(worldPos.x, worldPos.y);
+          };
+
+          this.input.onMouseUpCallback = (mouseX, mouseY) => {
+            this.slingshot.releaseBall();
+
+            // Load next ball after a short delay (adjusted by speed multiplier)
+            const baseDelay = 500; // 500ms alapérték
+            const adjustedDelay = baseDelay / this.world.speedMultiplier;
+            setTimeout(() => {
+              this.currentBallIndex++;
+              this.loadNextBall();
+              this.updateBallCountUI();
+            }, adjustedDelay);
+          };
+        }
+
+        loadNextBall() {
+          if (this.currentBallIndex < this.balls.length) {
+            this.slingshot.loadBall(this.balls[this.currentBallIndex]);
+          }
+        }
+
+        updateBallCountUI() {
+          const remaining = GAME_CONFIG.maxBalls - this.currentBallIndex;
+          document.getElementById("ballCount").textContent = remaining;
+        }
+
+        update(dt) {
+          // Reset handler
+          if (this.input.isSpacePressed()) {
+            if (!this.resetCooldown) {
+              this.reset();
+              this.resetCooldown = true;
+              setTimeout(() => {
+                this.resetCooldown = false;
+              }, 300);
+            }
+          }
+
+          // Physics step
+          this.world.step(dt);
+
+          // Update boxes
+          for (const box of this.boxes) {
+            box.update();
+          }
+
+          // Update balls
+          for (const ball of this.balls) {
+            ball.update();
+          }
+        }
+
+        reset() {
+          // FONTOS: Először törölni kell a previousVelocities Map-et
+          // hogy reset után ne legyen hamis sebességváltozás detektálva
+          this.world.previousVelocities.clear();
+
+          // Reset all boxes
+          for (const box of this.boxes) {
+            box.reset();
+          }
+
+          // Reset all balls
+          for (const ball of this.balls) {
+            ball.reset();
+          }
+
+          // Reset game state
+          this.currentBallIndex = 0;
+          this.loadNextBall();
+          this.updateBallCountUI();
+
+          console.log("Game reset!");
+        }
+
+        render() {
+          this.threeRenderer.render();
+        }
+      }
+
+      // ============================================
+      // START
+      // ============================================
+      initLibraries()
+        .then(() => {
+          console.log("Starting GameApp...");
+          new GameApp();
+          console.log("GameApp initialized successfully");
+        })
+        .catch((err) => {
+          console.error("Failed to start game:", err);
+        });
+    </script>
+</body>
+</html>

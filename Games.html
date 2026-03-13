@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GameZone</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link href="style.css" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark gaming-navbar">
+
+<div class="container">
+
+<a class="navbar-brand logo" href="#">
+🎮 GameZone
+</a>
+
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+<span class="navbar-toggler-icon"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="menu">
+
+<ul class="navbar-nav ms-auto text-center">
+
+<li class="nav-item">
+<a class="nav-link active" href="index.html">Home</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="Games.html">Games</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="Top_Players.html">Top Players</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="login.html">Login</a>
+</li>
+
+<li class="nav-item ms-3">
+<button class="btn btn-danger login-btn" data-bs-toggle="modal" data-bs-target="#loginModal">
+Login
+</button>
+</li>
+
+</ul>
+
+</div>
+</div>
+</nav>
+<script src="main.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<section class="games-section">
+
+<h1 class="title" >
+    <a class="nav-link active" style="color: aqua;text-shadow:0 0 20px #00f7ff;">🔥 Popular Games</a>
+</h1> 
+
+<div class="container">
+
+<div class="row">
+
+<!-- GAME 1 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p23.webp" 
+alt="SNACK GAME" 
+width="300px" height="200px">
+<h3>SNACK GAME</h3>
+
+<button class="play-btn" onclick="playGame('snack.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 2 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="ChatGPT Image Mar 12, 2026, 11_55_21 AM.png" 
+alt="Car Racing" 
+width="300">
+<h3>Car Racing</h3>
+
+<button class="play-btn" onclick="playGame('racing.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 3 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p2.png" 
+alt="Chess game" 
+width="300">
+<h3>Chess game</h3>
+
+<button class="play-btn" onclick="playGame('chess.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 4 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p4.png" 
+alt="Ludo game" 
+width="133px">
+<h3>Ludo game</h3>
+
+<button class="play-btn" onclick="playGame('ludo.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</section>
+<section class="games-section">
+
+
+
+<div class="container">
+
+<div class="row">
+
+<!-- GAME 1 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p10.jpg" 
+alt="Table Tennis" 
+width="261px">
+<h3>Table Tennis </h3>
+
+<button class="play-btn" onclick="playGame('table_tennis.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 2 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p5.png" 
+alt="Racing Game" 
+width="300">
+<h3> Racing Game</h3>
+
+<button class="play-btn" onclick="playGame('Animal_Racing.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 3 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p6.png" 
+alt="Fruit Ninja Test" 
+width="300">
+<h3>Fruit Ninja Test</h3>
+
+<button class="play-btn" onclick="playGame('Fruit_Ninja_Test.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 4 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p7.png" 
+alt="Slingshot Demo" 
+width="300">
+<h3>Slingshot Demo</h3>
+
+<button class="play-btn" onclick="playGame('Slingshot_Demo.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</section>
+<section class="games-section">
+
+
+<div class="container">
+
+<div class="row">
+
+<!-- GAME 1 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p28.jpg" 
+alt="Snake & Ladders" 
+width="300px" >
+<h3> Ladders</h3>
+
+<button class="play-btn" onclick="playGame('Snake_Ladders.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 2 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p8.png" 
+alt="TicTacToe game" 
+width="300">
+<h3>TicTacToe game</h3>
+
+<button class="play-btn" onclick="playGame('TicTacToe.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 3 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p24.png" 
+alt="uno! game" 
+width="300">
+<h3>duo<br> game</h3>
+
+<button class="play-btn" onclick="playGame('duo.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 4 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p9.jpeg" 
+alt="uno! game" 
+width="300">
+<h3>uno! <br>game</h3>
+
+<button class="play-btn" onclick="playGame('uno!.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</section>
+<section class="games-section">
+
+
+<div class="container">
+
+<div class="row">
+
+<!-- GAME 1 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p19.png" 
+alt="Emoji Map Editor" 
+width="320px">
+<h3>Emoji Map Editor</h3>
+
+<button class="play-btn" onclick="playGame('Emoji_Map_Editor.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 2 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p15.avif" 
+alt="Memory Match" 
+width="400px">
+<h3> Memory Match</h3>
+
+<button class="play-btn" onclick="playGame('Memory.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 3 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p16.png" 
+alt="gummy blocks" 
+width="223px" >
+<h3>gummy blocks</h3>
+
+<button class="play-btn" onclick="playGame('gummy_blocks.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+
+<!-- GAME 4 -->
+
+<div class="col-md-3">
+<div class="game-card">
+
+<img src="p18.jpg" 
+alt="shape collector" 
+width="340px">
+<h3>
+shape collector </h3>
+
+<button class="play-btn" onclick="playGame('shape_collector.html')">
+Play Now
+</button>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</section>
+
+<br>
+<br>
+
+
+<footer class="game-footer">
+
+<div class="container">
+
+<div class="row">
+
+<!-- Logo -->
+<div class="col-md-4 footer-box">
+<h3 class="logo">🎮 GameZone</h3>
+<p>Play the best online games with amazing graphics and fun gameplay.</p>
+</div>
+
+<!-- Links -->
+<div class="col-md-4 footer-box">
+<h4>Quick Links</h4>
+<ul>
+<li><a href="index.html">Home</a></li>
+<li><a href="Games.html">Games</a></li>
+<li><a href="Top_Players.html">Top Players</a></li>
+<li><a href="login.html">Contact</a></li>
+</ul>
+</div>
+
+<!-- Social -->
+<div class="col-md-4 footer-box">
+<h4>Follow Us</h4>
+
+<div class="social-icons">
+<a href="#">🌐</a>
+<a href="#">📘</a>
+<a href="#">📸</a>
+<a href="#">🐦</a>
+</div>
+
+</div>
+
+</div>
+
+<hr>
+
+<p class="copyright">
+© 2026 GameZone | All Rights Reserved
+</p>
+
+</div>
+
+<button id="topBtn">⬆</button>
+
+</footer>
+</body>
+</html>

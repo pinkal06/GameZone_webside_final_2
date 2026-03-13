@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ludo Game</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+<style>
+    body{
+background:#222;
+color:white;
+}
+
+.ludo-board{
+
+width:500px;
+height:500px;
+margin:auto;
+
+display:grid;
+
+grid-template-columns:1fr 1fr 1fr;
+grid-template-rows:1fr 1fr 1fr;
+
+border:6px solid white;
+
+}
+
+.home{
+border:4px solid white;
+}
+
+.red{
+background:red;
+}
+
+.green{
+background:green;
+}
+
+.blue{
+background:#2196f3;
+}
+
+.yellow{
+background:gold;
+}
+
+.center{
+
+background:linear-gradient(
+45deg,
+red 25%,
+green 25%,
+green 50%,
+yellow 50%,
+yellow 75%,
+blue 75%
+);
+
+}
+
+.path{
+background:#eee;
+}
+
+#dice{
+font-size:50px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container text-center mt-4">
+
+<h2>🎲 Ludo Game</h2>
+
+<div id="dice">🎲</div>
+<button class="btn btn-primary mt-2" onclick="rollDice()">Roll Dice</button>
+
+<div class="ludo-board mt-4">
+
+<div class="home red"></div>
+<div class="path"></div>
+<div class="home green"></div>
+
+<div class="path"></div>
+<div class="center"></div>
+<div class="path"></div>
+
+<div class="home blue"></div>
+<div class="path"></div>
+<div class="home yellow"></div>
+
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

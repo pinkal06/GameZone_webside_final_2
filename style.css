@@ -1,0 +1,543 @@
+/* GOOGLE FONT */
+body{
+background:#0f172a;
+font-family:'Courier New', Courier, monospace;
+color:white;
+margin:0;
+padding:0;
+}
+
+/* NAVBAR */
+
+.gaming-navbar{
+padding:15px 0;
+box-shadow:0 0 20px rgba(0,0,0,0.6);
+}
+
+.logo{
+font-size:26px;
+font-weight:bold;
+color:#00f7ff !important;
+}
+
+.nav-link{
+font-size:18px;
+margin-right:15px;
+transition:0.3s;
+}
+
+.nav-link:hover{
+color:#00f7ff !important;
+transform:scale(1.1);
+}
+
+.login-btn{
+border-radius:20px;
+padding:8px 20px;
+font-weight:bold;
+transition:0.3s;
+}
+
+.login-btn:hover{
+transform:scale(1.1);
+}
+
+/* HERO SECTION */
+
+.hero-section{
+position:relative;
+height:70vh;
+overflow:hidden;
+display:flex;
+align-items:center;
+}
+
+.hero-img{
+width:300px;
+height:300px;
+border-radius:50%;
+object-fit:cover;
+
+
+animation: float 3s ease-in-out infinite;
+box-shadow:0 0 30px #00f7ff;
+}
+
+/* Floating Animation */
+
+@keyframes float {
+
+0%{
+transform: translateY(0px);
+}
+
+50%{
+transform: translateY(-20px);
+}
+
+100%{
+transform: translateY(0px);
+}
+
+}
+
+
+.hero-title{
+font-size:60px;
+color:#00f7ff;
+text-shadow:0 0 20px #00f7ff;
+}
+
+.hero-text p{
+font-size:18px;
+margin: 20px 0;
+
+}
+
+.login-btn{
+background:#ff0000;
+color:white;
+font-weight:bold;
+}
+
+.login-btn:hover{
+background:#ff2f72;
+transform:scale(1.1);
+}
+
+/* POPULAR GAMES */
+
+.games-section{
+padding:60px 0;
+
+}
+
+
+.title{
+text-align:center;
+font-size:50px;
+margin-bottom:40px;
+color:#00f7ff;
+}
+
+/* GAME CARD */
+
+.game-card{
+background:#1e293b;
+border-radius:15px;
+overflow:hidden;
+text-align:center;
+padding-bottom:20px;
+transition:0.4s;
+box-shadow:0 0 15px rgba(0,0,0,0.7);
+}
+
+.game-card video{
+width:100%;
+height:180px;
+object-fit:cover;
+}
+
+.game-card h3{
+margin:15px 0;
+}
+
+.game-card:hover{
+transform:translateY(-10px) scale(1.05);
+box-shadow:0 0 25px #00f7ff;
+}
+
+/* PLAY BUTTON */
+
+.play-btn{
+background:#00f7ff;
+border:none;
+padding:10px 20px;
+border-radius:25px;
+font-weight:bold;
+transition:0.3s;
+}
+
+.play-btn:hover{
+background:#00c9d6;
+transform:scale(1.1);
+}
+
+
+/* LOGIN BOX */
+
+.game-bg{
+
+background-size:cover;
+padding:100px 0;
+display:flex;
+justify-content:center;
+}
+
+.login-box{
+background:rgba(0,0,0,0.7);
+padding:40px;
+border-radius:15px;
+width:320px;
+text-align:center;
+box-shadow:0 0 20px #00f7ff;
+}
+
+.login-box h2{
+margin-bottom:25px;
+}
+
+.input-box{
+position:relative;
+margin-bottom:20px;
+}
+
+.input-box input{
+width:100%;
+padding:10px;
+background:none;
+border:none;
+border-bottom:2px solid white;
+color:white;
+outline:none;
+}
+
+.input-box label{
+position:absolute;
+left:0;
+top:-18px;
+font-size:14px;
+}
+
+/* FOOTER */
+
+.game-footer{
+background:#020617;
+padding:50px 0;
+margin-top:80px;
+}
+
+.footer-box h4{
+margin-bottom:15px;
+}
+
+.footer-box ul{
+list-style:none;
+padding:0;
+}
+
+.footer-box ul li{
+margin-bottom:8px;
+}
+
+.footer-box ul li a{
+color:white;
+text-decoration:none;
+}
+
+.footer-box ul li a:hover{
+color:#00f7ff;
+}
+
+.social-icons a{
+font-size:25px;
+margin-right:15px;
+text-decoration:none;
+}
+
+.social-icons a:hover{
+transform:scale(1.2);
+}
+
+.copyright{
+text-align:center;
+margin-top:20px;
+color:#94a3b8;
+}
+
+/* BACK TO TOP */
+
+#topBtn{
+position:fixed;
+bottom:30px;
+right:30px;
+background:#00f7ff;
+border:none;
+padding:12px 15px;
+border-radius:50%;
+font-size:18px;
+cursor:pointer;
+display:none;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+.hero-title{
+font-size:35px;
+}
+
+.game-card{
+margin-bottom:25px;
+}
+
+}
+.recent-games{
+padding:80px 0;
+background:#0f172a;
+}
+
+.section-title{
+text-align:center;
+font-size:40px;
+color:#00f7ff;
+margin-bottom:50px;
+}
+
+.game-card2{
+background:#1e293b;
+border-radius:15px;
+overflow:hidden;
+transition:0.4s;
+box-shadow:0 0 15px rgba(0,0,0,0.6);
+}
+
+.game-card2 img{
+width:100%;
+height:220px;
+object-fit:cover;
+}
+
+.game-info{
+padding:20px;
+}
+
+.game-card2 h3{
+font-size:20px;
+margin-top:10px;
+}
+
+.game-card2 p{
+font-size:14px;
+color:#cbd5f5;
+}
+
+.rating{
+color:#00f7ff;
+font-size:18px;
+margin:10px 0;
+}
+
+.comments{
+font-size:14px;
+color:#94a3b8;
+}
+
+.tag{
+color:white;
+background:#ff0033;
+font-weight:bold;
+padding:5px 10px;
+}
+
+
+
+.new{
+background:#22c55e;
+}
+
+.racing{
+background:#f97316;
+}
+
+.adventure{
+background:#3b82f6;
+}
+
+/* Hover Animation */
+
+.game-card2:hover{
+transform:translateY(-12px) scale(1.03);
+box-shadow:0 0 25px #00f7ff;
+}
+.reviews-section{
+padding:80px 0;
+background:#020617;
+}
+
+.section-title{
+text-align:center;
+font-size:40px;
+margin-bottom:50px;
+color:#00f7ff;
+}
+
+.review-card{
+background:#1e293b;
+border-radius:15px;
+padding:20px;
+text-align:center;
+transition:0.4s;
+box-shadow:0 0 15px rgba(0,0,0,0.6);
+}
+
+.review-card img{
+width:100%;
+height:200px;
+object-fit:cover;
+border-radius:10px;
+margin-bottom:15px;
+}
+
+.review-card h4{
+color:white;
+}
+
+.review-card p{
+color:#cbd5e1;
+font-size:14px;
+}
+
+.rating{
+color:#00f7ff;
+font-size:20px;
+margin-top:10px;
+}
+
+.review-card:hover{
+transform:scale(1.05);
+box-shadow:0 0 25px #00f7ff;
+}
+.top-players{
+padding:100px 0;
+background:linear-gradient(180deg,#020617,#0f172a);
+}
+
+.section-title{
+text-align:center;
+font-size:45px;
+margin-bottom:60px;
+color:#00f7ff;
+text-shadow:0 0 20px #00f7ff;
+}
+
+/* PLAYER CARD */
+
+.player-card{
+
+background:#1e293b;
+
+border-radius:20px;
+
+padding:30px;
+
+text-align:center;
+
+transition:0.5s;
+
+position:relative;
+
+box-shadow:0 0 20px rgba(0,0,0,0.6);
+
+animation:float 4s infinite ease-in-out;
+
+}
+
+/* PLAYER IMAGE */
+
+.player-img{
+
+width:120px;
+
+height:120px;
+
+border-radius:50%;
+
+border:4px solid #00f7ff;
+
+margin-bottom:15px;
+
+}
+
+/* RANK */
+
+.rank{
+
+font-size:30px;
+
+position:absolute;
+
+top:10px;
+
+left:10px;
+
+}
+
+/* STATS */
+
+.stats{
+
+display:flex;
+
+justify-content:space-around;
+
+font-size:14px;
+
+color:#cbd5f5;
+
+margin:10px 0;
+
+}
+
+/* RATING */
+
+.rating{
+
+color:#facc15;
+
+font-size:20px;
+
+}
+
+/* HOVER EFFECT */
+
+.player-card:hover{
+
+transform:translateY(-15px) scale(1.08);
+
+box-shadow:0 0 30px #00f7ff;
+
+}
+
+/* TOP PLAYER COLORS */
+
+.gold{
+
+border:2px solid gold;
+
+}
+
+.silver{
+
+border:2px solid silver;
+
+}
+
+.bronze{
+
+border:2px solid #cd7f32;
+
+}
+
+/* FLOAT ANIMATION */
+
+@keyframes float{
+
+0%{transform:translateY(0)}
+
+50%{transform:translateY(-15px)}
+
+100%{transform:translateY(0)}
+
+}
