@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GameZone</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+
+<style>
+.top-players{
+background:#111;
+}
+
+.player-card{
+background:#1c1c1c;
+border-radius:15px;
+padding:20px;
+color:white;
+transition:0.3s;
+position:relative;
+box-shadow:0 0 15px rgba(0,0,0,0.5);
+}
+
+.player-card:hover{
+transform:translateY(-10px);
+box-shadow:0 0 20px #00f7ff;
+}
+
+.player-img{
+width:90px;
+height:90px;
+border-radius:50%;
+object-fit:cover;
+margin-bottom:10px;
+border:3px solid #00f7ff;
+}
+
+.rank{
+position:absolute;
+top:10px;
+right:10px;
+font-size:22px;
+}
+
+.stats{
+display:flex;
+justify-content:space-between;
+font-size:14px;
+margin:10px 0;
+}
+
+.stars{
+color:gold;
+font-size:18px;
+}
+
+.gold{ border:2px solid gold; }
+.silver{ border:2px solid silver; }
+.bronze{ border:2px solid #cd7f32; }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark gaming-navbar">
+
+<div class="container">
+
+<a class="navbar-brand logo" href="#">🎮 GameZone</a>
+
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+<span class="navbar-toggler-icon"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="menu">
+
+<ul class="navbar-nav ms-auto text-center">
+
+<li class="nav-item">
+<a class="nav-link active" href="index.html">Home</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="Games.html">Games</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="Top_Players.html">Top Players</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="login.html">Login</a>
+</li>
+
+<li class="nav-item ms-3">
+<button class="btn btn-danger login-btn" data-bs-toggle="modal" data-bs-target="#loginModal">
+Login
+</button>
+</li>
+
+</ul>
+
+</div>
+</div>
+</nav>
+
+<br><br><br>
+
+<script src="main.js"></script>
+
+<!-- Top Players -->
+<section class="top-players py-5">
+
+<div class="container">
+
+<h1 class="text-center mb-5" style="color:#00f7ff;text-shadow:0 0 20px #00f7ff;">
+🏆 Top Gaming Players
+</h1>
+
+<div class="row g-4">
+
+<!-- Player 1 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card gold text-center">
+
+<div class="rank">🥇</div>
+
+<img src="pexels-yankrukov-9072377.jpg" class="player-img" alt="John Gamer - Assassin's Creed Player">
+
+<h5>John Gamer</h5>
+<p>Assassin's Creed</p>
+
+<div class="stats">
+<span>Wins 120</span>
+<span>Level 35</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 2 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card silver text-center">
+
+<div class="rank">🥈</div>
+
+<img src="pexels-tima-miroshnichenko-7046708.jpg" class="player-img" alt="Jane Pro - Doom Professional Gamer">
+
+<h5>Jane Pro</h5>
+<p>Doom</p>
+
+<div class="stats">
+<span>Wins 98</span>
+<span>Level 30</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 3 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card bronze text-center">
+
+<div class="rank">🥉</div>
+
+<img src="pexels-pavel-danilyuk-7776150.jpg" class="player-img" alt="Alex King - Overwatch Gaming Champion">
+
+<h5>Alex King</h5>
+<p>Overwatch</p>
+
+<div class="stats">
+<span>Wins 110</span>
+<span>Level 32</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 4 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card text-center">
+
+<img src="pexels-yankrukov-9072281.jpg" class="player-img" alt="Mary Gamer - GTA V Player">
+
+<h5>Mary Gamer</h5>
+<p>GTA V</p>
+
+<div class="stats">
+<span>Wins 105</span>
+<span>Level 31</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 5 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card text-center">
+
+<img src="pexels-yankrukov-9072296.jpg" class="player-img" alt="DarkKnight - Call Of Duty Gamer">
+
+<h5>DarkKnight</h5>
+<p>Call Of Duty</p>
+
+<div class="stats">
+<span>Wins 130</span>
+<span>Level 40</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 6 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card text-center">
+
+<img src="pexels-a-darmel-7862516.jpg" class="player-img" alt="CyberWarrior - Doom Competitive Gamer">
+
+<h5>CyberWarrior</h5>
+<p>Doom</p>
+
+<div class="stats">
+<span>Wins 97</span>
+<span>Level 29</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 7 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card text-center">
+
+<img src="pexels-rdne-7915259.jpg" class="player-img" alt="GhostPlayer - Fortnite Expert Gamer">
+
+<h5>GhostPlayer</h5>
+<p>Fortnite</p>
+
+<div class="stats">
+<span>Wins 108</span>
+<span>Level 33</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+<!-- Player 8 -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+<div class="player-card text-center">
+
+<img src="pexels-yankrukov-9072340.jpg" class="player-img" alt="DragonSlayer - GTA V Master Player">
+
+<h5>DragonSlayer</h5>
+<p>GTA V</p>
+
+<div class="stats">
+<span>Wins 105</span>
+<span>Level 31</span>
+</div>
+
+<div class="stars">⭐⭐⭐⭐⭐</div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</section>
+
+</body>
+</html>
