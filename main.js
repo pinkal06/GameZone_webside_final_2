@@ -43,9 +43,5 @@ top:0,
 behavior:"smooth"
 })
 }
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-F5MJQ3GMRL');
 
